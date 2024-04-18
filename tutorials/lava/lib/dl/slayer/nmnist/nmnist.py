@@ -13,6 +13,9 @@ from torch.utils.data import Dataset, DataLoader
 import lava.lib.dl.slayer as slayer
 
 
+"""
+Transform method to augment the data
+"""
 def augment(event):
     x_shift = 4
     y_shift = 4
@@ -95,22 +98,50 @@ https://www.garrickorchard.com/datasets/n-mnist
                 f'https://www.garrickorchard.com/datasets/n-mnist '\
                 f'to {data_path}/'
 
-        self.samples = glob.glob(f'{data_path}/*/*.bin')
-        self.sampling_time = sampling_time
-        self.num_time_bins = int(sample_length/sampling_time)
-        self.transform = transform
+        self.samples = glob.glob(f'{data_path}/*/*.bin')    # Get list of filenames
+        self.sampling_time = sampling_time 
+        self.num_time_bins = int(sample_length/sampling_time)   # Number of time bins in the sample
+        self.transform = transform  # Transformation method applied to the data
 
+    """
+    __getitem__ method is used to get the data from the dataset
+    parameters:
+    i : int
+        index of the data to be fetched
+    returns:
+    spike : torch.Tensor
+        spike data
+    """
     def __getitem__(self, i):
         filename = self.samples[i]
         label = int(filename.split('/')[-2])
+
+        # Reads a 2dimensional binary spike file containing:
+        # Each spike event is represented by a 40-bit number containing:
+        #   1. timestamp of the event
+        #   2. xID of the neuron
+        #   3. yID of the neuron
+        #   4. Sign of the spike event: 0->OFF event. 1-> ON event
+        # THUS, each of these binary files contains many spike events, where each event can be either an "OFF" or "ON" event. resulting in the shape
+        # (sign_event, height_img, width_img, num_time_bins). Since the DVS sensor takes images across time, we can represent the changing pixels
+        # through spikes
         event = slayer.io.read_2d_spikes(filename)
+
+
         if self.transform is not None:
-            event = self.transform(event)
+            event = self.transform(event)   # 
+
+        # Reshape the event to the format (sign_event, height_img, width_img, num_time_bins)
         spike = event.fill_tensor(
                 torch.zeros(2, 34, 34, self.num_time_bins),
                 sampling_time=self.sampling_time,
             )
-        return spike.reshape(-1, self.num_time_bins), label
+        
+        # Reshape the tensor into a 2D array of shape (instant_events_overview, num_time_bins)
+        # Each Row containing all the events that occured in that timestamp
+        spike_return = spike.reshape(-1, self.num_time_bins)
+
+        return spike_return, label
 
     def __len__(self):
         return len(self.samples)
