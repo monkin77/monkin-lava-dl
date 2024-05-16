@@ -1,7 +1,6 @@
-import os
-import pandas as pd
 from torch.utils.data import Dataset
-from utils.input import read_spike_events
+import numpy as np
+from utils.io import preview_np_array
 
 '''
 Transforms the spike train data into a format that can be fed to the network.
@@ -30,27 +29,51 @@ class SpikeTrainsDataset(Dataset):
     Dataset class for spike trains data.
     '''
     
-    '''
-    Constructor of the Dataset.
-    @up_filename (str): Name of the file containing the UP spike train data.
-    @down_filename (str): Name of the file containing the DOWN spike train data.
-    @annotations_filename (str): Name of the file containing the annotations.
-    @transform (callable, optional): Optional transform to be applied on the data
-    @target_transform (callable, optional): Optional transform to be applied on the labels
-    '''
-    def __init__(self, up_filename, down_filename, annotations_filename, transform=None, target_transform=None):
-        ripple_spike_train_up = read_spike_events(up_filename)
-        ripple_spike_train_down = read_spike_events(down_filename)
-        self.up_spike_times, self.down_spike_times = prepare_spikes_data(ripple_spike_train_up, ripple_spike_train_down)
-        print(f"UP spike train data: {self.up_spike_times.shape}")
-        print(f"DOWN spike train data: {self.down_spike_times.shape}")
+    def __init__(self, spikes_trains_filename, annotations_filename, transform=None, target_transform=None, verbose=False):
+        '''
+        Constructor of the Dataset.
+        @spike_trains_filename (str): Name of the file containing the SEEG data converted to UP and DOWN spikes.
+        @down_filename (str): Name of the file containing the DOWN spike train data.
+        @annotations_filename (str): Name of the file containing the annotations.
+        @transform (callable, optional): Optional transform to be applied on the data
+        @target_transform (callable, optional): Optional transform to be applied on the labels
+        '''
+        self.input_spikes = np.load(f"{spikes_trains_filename}")
+        if verbose:
+            preview_np_array(self.input_spikes, "Input Spikes")
         
         self.transform = transform
         self.target_transform = target_transform
     
-    '''
-    Returns the number of samples in the dataset.
-    '''
     def __len__(self):
-        
+        '''
+        Returns the number of samples in the dataset.
+        '''
+        return self.input_spikes.shape[0]
     
+    def __getitem__(self, idx):
+        '''
+        Returns the sample at the given index.
+        @idx (int): Index of the sample to retrieve.
+
+        Returns:
+        - spike_array (array): spike train data (binary) for the given index (UP and DOWN)
+        '''
+        # Get the spike train data for the given index
+        curr_spike_train = self.input_spikes[idx]
+
+        # Get the labels for the given index
+        # TODO
+        label = False
+
+        # Apply the transformation to the input
+        if self.transform:
+            curr_spike_train = self.transform(curr_spike_train)
+
+        # Apply the transformation to the labels
+        if self.target_transform:
+            # TODO
+            pass
+
+        # Return the spike train data
+        return curr_spike_train, label
