@@ -77,3 +77,4 @@ class SpikeTrainsDataset(Dataset):
 
         # Return the spike train data
         return curr_spike_train, label
+    
