@@ -30,21 +30,26 @@ class SpikeTrainsDataset(Dataset):
     Dataset class for spike trains data.
     '''
     
-    def __init__(self, spikes_trains_filename, annotations_filename, transform=None, target_transform=None, verbose=False):
+    def __init__(self, spikes_trains_filename, annotations_filename, device, transform=None, target_transform=None, verbose=False):
         '''
         Constructor of the Dataset.
         @spike_trains_filename (str): Name of the file containing the SEEG data converted to UP and DOWN spikes.
-        @down_filename (str): Name of the file containing the DOWN spike train data.
         @annotations_filename (str): Name of the file containing the annotations.
+        @device (str): Device to use for the data (CPU or GPU). Dataset will be moved to this device.
         @transform (callable, optional): Optional transform to be applied on the data
         @target_transform (callable, optional): Optional transform to be applied on the labels
         '''
+        # Load the spike train data
         self.input_spikes = np.load(f"{spikes_trains_filename}")
         if verbose:
             preview_np_array(self.input_spikes, "Input Spikes")
-            
-        # Convert the input_spikes to a Tensor
-        self.input_spikes = from_numpy(self.input_spikes)
+        # Convert the input_spikes to a Tensor and move them to the CPU/GPU
+        self.input_spikes = from_numpy(self.input_spikes).to(device)
+        
+        # Load the annotations
+        self.annotations = np.load(f"{annotations_filename}")
+        if verbose:
+            preview_np_array(self.annotations, "Annotations")
         
         self.transform = transform
         self.target_transform = target_transform
