@@ -1,6 +1,7 @@
 from torch.utils.data import Dataset
 import numpy as np
 from utils.io import preview_np_array
+from torch import from_numpy
 
 '''
 Transforms the spike train data into a format that can be fed to the network.
@@ -41,6 +42,9 @@ class SpikeTrainsDataset(Dataset):
         self.input_spikes = np.load(f"{spikes_trains_filename}")
         if verbose:
             preview_np_array(self.input_spikes, "Input Spikes")
+            
+        # Convert the input_spikes to a Tensor
+        self.input_spikes = from_numpy(self.input_spikes)
         
         self.transform = transform
         self.target_transform = target_transform
