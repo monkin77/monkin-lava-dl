@@ -41,13 +41,14 @@ class SpikeTrainsDataset(Dataset):
         '''
         # Load the spike train data
         self.input_spikes = np.load(f"{spikes_trains_filename}")
+        # Convert the input_spikes to a Tensor (double) and move them to the CPU/GPU
+        self.input_spikes = from_numpy(self.input_spikes).to(device)
         if verbose:
             preview_np_array(self.input_spikes, "Input Spikes")
-        # Convert the input_spikes to a Tensor and move them to the CPU/GPU
-        self.input_spikes = from_numpy(self.input_spikes).to(device)
         
         # Load the annotations
         self.annotations = np.load(f"{annotations_filename}")
+        self.annotations = from_numpy(self.annotations).to(device)
         if verbose:
             preview_np_array(self.annotations, "Annotations")
         
