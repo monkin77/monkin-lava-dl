@@ -72,8 +72,7 @@ class SpikeTrainsDataset(Dataset):
         curr_spike_train = self.input_spikes[idx]
 
         # Get the labels for the given index
-        # TODO
-        label = False
+        label = self.annotations[idx]
 
         # Apply the transformation to the input
         if self.transform:
